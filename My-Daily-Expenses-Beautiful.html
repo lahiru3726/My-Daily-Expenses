@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Daily Expenses 💰</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#FFF8F0;color:#1F2A2E;padding:16px}
+.wrap{max-width:520px;margin:0 auto}
+.head{background:#1F4E5F;color:#fff;border-radius:20px;padding:20px}
+.head h1{margin:0;font-size:24px}.head p{opacity:.85;margin:6px 0 0}
+.card{background:#fff;border-radius:18px;padding:16px;margin-top:14px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+label{font-size:13px;font-weight:700;color:#555}input,select{width:100%;padding:12px;border:1.5px solid #E8DDD3;border-radius:12px;margin:6px 0 12px;font-size:16px;background:#FFFDFB}
+button{width:100%;padding:14px;border:0;border-radius:14px;background:#FF8A3D;color:#fff;font-size:17px;font-weight:800;cursor:pointer}
+button:active{transform:scale(.98)}
+.row{display:flex;gap:12px}.row>div{flex:1}
+.big{font-size:36px;font-weight:900}.green{color:#1A9A5A}.red{color:#D32F2F}
+.bar{height:12px;background:#EEE;border-radius:99px;overflow:hidden}.bar>div{height:100%;background:#1A9A5A;transition:.3s}
+.item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F0E8E0}
+.item b{font-size:16px}.del{background:#FFE8E8;color:#D32F2F;width:auto;padding:8px 12px;font-size:13px}
+.pill{display:inline-block;background:#EAF2F5;padding:6px 10px;border-radius:99px;font-size:13px;font-weight:700}
+.catbar{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:14px}.catbar .track{flex:1;height:10px;background:#EEE;border-radius:99px;overflow:hidden}.catbar .fill{height:100%;background:#FF8A3D}
+small{color:#777}
+</style></head><body><div class="wrap">
+<div class="head"><h1>My Daily Expenses 💰</h1><p>Nov 15 - Dec 13 • Exam Dec 14 • Job 18:00-22:00</p><p style="margin-top:10px">Daily Limit: <span id="limitLabel" style="font-size:22px;font-weight:900">Rs. 650</span></p></div>
+
+<div class="card"><h3 style="margin:0 0 8px">⚙️ My Budget - change once</h3>
+<div class="row"><div><label>Monthly Income Rs.</label><input id="income" type="number" value="35000"></div><div><label>Savings Rs.</label><input id="savings" type="number" value="3000"></div></div>
+<div class="row"><div><label>Transport</label><input id="f1" type="number" value="6000"></div><div><label>Phone</label><input id="f2" type="number" value="2500"></div></div>
+<div class="row"><div><label>Home</label><input id="f3" type="number" value="5000"></div><div><label>Exam / Notes</label><input id="f4" type="number" value="2000"></div></div>
+<p><span class="pill" id="leftLabel"></span> <small>Left for 30 days → Daily Limit auto-updates</small></p></div>
+
+<div class="card"><h3 style="margin:0 0 8px">➕ Add Expense</h3>
+<label>Date</label><input id="date" type="date">
+<label>Category</label><select id="cat"><option>🍛 Food</option><option>🚌 Transport</option><option>📱 Phone</option><option>📚 Study</option><option>🎉 Fun / Other</option><option>🏠 Home</option></select>
+<label>Amount Rs.</label><input id="amt" type="number" placeholder="e.g. 400">
+<label>Note (optional)</label><input id="note" placeholder="e.g. packed lunch / kottu after job">
+<button onclick="addExp()">Add Expense ✅</button></div>
+
+<div class="card"><h3 style="margin:0">📅 Today</h3><div class="big" id="todaySpent">Rs. 0</div><p id="todayMsg"></p><div class="bar"><div id="todayBar" style="width:0%"></div></div><p><small id="todayDetail"></small></p></div>
+
+<div class="card"><h3 style="margin:0 0 8px">📊 Where my money goes</h3><div id="cats"></div></div>
+
+<div class="card"><h3 style="margin:0 0 8px">🧾 All Expenses</h3><div id="list"></div><button onclick="clearAll()" style="background:#eee;color:#333;margin-top:12px">Clear All</button></div>
+
+<div class="card"><h3>💡 3 Rules for 18:00-22:00 Job</h3><p>1. Pack dinner box BEFORE job - saves Rs.9,000/month</p><p>2. Monday cash: Daily Limit × 7 in envelope. When empty, stop.</p><p>3. No-Buy till Dec 14: no delivery, no new clothes.</p></div>
+</div>
+<script>
+let exps = JSON.parse(localStorage.getItem('my_exps')||'[]');
+if(exps.length===0){ exps=[{date:'2026-11-15',cat:'🍛 Food',amt:400,note:'packed lunch'},{date:'2026-11-15',cat:'🚌 Transport',amt:150,note:'bus'},{date:'2026-11-16',cat:'🍛 Food',amt:350,note:''},{date:'2026-11-16',cat:'🚌 Transport',amt:150,note:''},{date:'2026-11-17',cat:'🍛 Food',amt:500,note:''},{date:'2026-11-17',cat:'📚 Study',amt:200,note:'printing'}]; save(); }
+function fmt(n){return 'Rs. '+Number(n||0).toLocaleString('en-LK')}
+function getLimit(){ let inc=+document.getElementById('income').value||0, sav=+document.getElementById('savings').value||0, f=(+document.getElementById('f1').value||0)+(+document.getElementById('f2').value||0)+(+document.getElementById('f3').value||0)+(+document.getElementById('f4').value||0); let left=inc-sav-f; return {left, daily: Math.max(0, Math.round(left/30))}; }
+function save(){ localStorage.setItem('my_exps', JSON.stringify(exps)); }
+function render(){
+ let L=getLimit(); document.getElementById('limitLabel').textContent=fmt(L.daily);
+ document.getElementById('leftLabel').textContent='Left: '+fmt(L.left)+' → Daily: '+fmt(L.daily);
+ let today=document.getElementById('date').value || new Date().toISOString().slice(0,10);
+ let t = exps.filter(e=>e.date===today).reduce((s,e)=>s+ +e.amt,0);
+ document.getElementById('todaySpent').textContent=fmt(t);
+ let rem=L.daily-t; document.getElementById('todayMsg').innerHTML = rem>=0 ? '<span class="green">✅ You have '+fmt(rem)+' left today</span>' : '<span class="red">⚠️ Over by '+fmt(-rem)+' - spend less tomorrow</span>';
+ document.getElementById('todayBar').style.width=Math.min(100, t/L.daily*100)+'%'; document.getElementById('todayBar').style.background= rem>=0?'#1A9A5A':'#D32F2F';
+ document.getElementById('todayDetail').textContent='Total all time: '+fmt(exps.reduce((s,e)=>s+ +e.amt,0))+' • Entries: '+exps.length;
+ // cats
+ let by={}; exps.forEach(e=>{by[e.cat]=(by[e.cat]||0)+ +e.amt});
+ let max=Math.max(1,...Object.values(by));
+ document.getElementById('cats').innerHTML = Object.entries(by).map(([k,v])=>`<div class="catbar"><span style="width:130px">${k}</span><div class="track"><div class="fill" style="width:${v/max*100}%"></div></div><b>${fmt(v)}</b></div>`).join('') || '<small>No expenses yet</small>';
+ // list sorted newest
+ let sorted=[...exps].sort((a,b)=> b.date.localeCompare(a.date));
+ document.getElementById('list').innerHTML = sorted.map((e,i)=>{ let idx=exps.indexOf(e); return `<div class="item"><div><b>${e.cat}</b><br><small>${e.date} • ${e.note||'no note'}</small></div><div style="display:flex;gap:8px;align-items:center"><b>${fmt(e.amt)}</b><button class="del" onclick="delExp(${idx})">✕</button></div></div>`}).join('') || '<small>No expenses yet. Add one above.</small>';
+}
+function addExp(){ let amt=+document.getElementById('amt').value; if(!amt){alert('Enter amount');return;} let date=document.getElementById('date').value || new Date().toISOString().slice(0,10); exps.push({date, cat:document.getElementById('cat').value, amt, note:document.getElementById('note').value}); document.getElementById('amt').value=''; document.getElementById('note').value=''; save(); render(); }
+function delExp(i){ exps.splice(i,1); save(); render(); }
+function clearAll(){ if(confirm('Clear all?')){ exps=[]; save(); render(); } }
+document.getElementById('date').value=new Date().toISOString().slice(0,10);
+['income','savings','f1','f2','f3','f4','date'].forEach(id=> document.getElementById(id).addEventListener('input', render));
+render();
+</script></body></html>
